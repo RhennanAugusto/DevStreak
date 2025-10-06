@@ -1,45 +1,60 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Tabs } from "expo-router";
+import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
-}
+        <Tabs screenOptions={
+          {headerStyle: {backgroundColor: "#f5f5f5f5"}, 
+           tabBarActiveTintColor:"purple",
+           tabBarInactiveTintColor:"gray",
+           headerShadowVisible: false,
+           tabBarStyle:{
+              backgroundColor: "#f5f5f5f5",
+              borderTopWidth: 0,
+              shadowOpacity: 0
+
+           },
+           tabBarLabelStyle:{
+              fontSize: 12
+           }
+           
+
+
+          }}>
+            <Tabs.Screen name="index" options=
+                {{title: "Metas de Hoje", headerTitleAlign: 'center', tabBarIcon: 
+                  ({color, focused}) => {
+                    return focused ? (
+                       <MaterialCommunityIcons name="calendar" size={22} color={color} />
+                    ) : (
+                      <MaterialCommunityIcons name="calendar" size={22} color="grey" />
+                    );
+                  }
+            }}/>
+
+            <Tabs.Screen name="sequencias" options=
+                {{title: "Sequências", headerTitleAlign: 'center', tabBarIcon: 
+                  ({color, focused}) => {
+                    return focused ? (
+                       <MaterialCommunityIcons name="chart-line" size={22} color={color} />
+                    ) : (
+                       <MaterialCommunityIcons name="chart-line" size={22} color="grey" />
+                    );
+                  }
+            }}/>
+
+            <Tabs.Screen name="metas" options=
+                {{title: "Adicione Metas", headerTitleAlign: 'center', tabBarIcon: 
+                  ({color, focused}) => {
+                    return focused ? (
+                       <MaterialCommunityIcons name="plus-circle" size={22} color={color} />
+                    ) : (
+                      <MaterialCommunityIcons name="plus-circle-outline" size={22} color="grey" />
+                    );
+                  }
+            }}/>
+            
+        </Tabs>
+   );
+} 

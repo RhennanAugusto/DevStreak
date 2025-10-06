@@ -1,50 +1,51 @@
-# Welcome to your Expo app 👋
+# 🚀 DevTracker — Metas & Hábitos (React Native + Expo + Appwrite)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **Trabalho da disciplina _Projeto de Software_ (graduação).**  
+> Aplicativo mobile para criar e acompanhar **metas/hábitos** com autenticação e dados em nuvem (Appwrite).  
+> Foco em código limpo, tipagem com **TypeScript** e UX simples usando **React Native Paper**.
 
-## Get started
+---
 
-1. Install dependencies
+## 🎯 Visão Geral
 
-   ```bash
-   npm install
-   ```
+O **DevTracker** ajuda você a criar metas, definir frequência (diária/semanal/mensal) e acompanhar o progresso ao longo do tempo.  
+A autenticação é feita pelo **Appwrite**, e os dados ficam salvos no **Database** do Appwrite Cloud.
 
-2. Start the app
+- 📲 **Mobile** (Expo/React Native)
+- 🔐 **Login / Logout** com sessão segura (logout estável via **JWT**)
+- ☁️ **Persistência** no Appwrite (Database + Auth)
+- 🧭 **Navegação** com Expo Router
+- 🧩 **TypeScript** com modelos tipados de documento
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 📸 Screenshots
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+<p align="center">
+  <img src="./assets/screenshots/login.png" width="260" alt="Tela de Login" />
+  <img src="./assets/screenshots/lista.png" width="260" alt="Lista de Metas" />
+  <img src="./assets/screenshots/add.png"   width="260" alt="Adicionar Meta" />
+</p>
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+---
 
-When you're ready, run:
+## ✨ Principais Funcionalidades
 
-```bash
-npm run reset-project
-```
+- ✅ **Cadastro & Login** (Appwrite Auth)
+- ✅ **Criação de metas** com título, descrição e frequência
+- ✅ **Listagem filtrada por usuário**
+- ✅ **Sessões persistentes**
+- ✅ **Logout confiável em React Native (via JWT + REST)**
+- ✅ UI com **React Native Paper**
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🛠️ Stack
 
-To learn more about developing your project with Expo, look at the following resources:
+- **React Native (Expo)**
+- **TypeScript**
+- **Expo Router**
+- **React Native Paper**
+- **Appwrite (Auth + Database)**
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
