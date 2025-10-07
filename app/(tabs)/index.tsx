@@ -73,11 +73,10 @@ export default function Index() {
                  Sair 
           </Button>
       </View>
-
-
-      <ScrollView>
+      
+      <ScrollView showsVerticalScrollIndicator={false}>
         {metas?.length === 0 ? (
-          <View style={style.vazio1}><Text style={style.vazio2}>Sem metas ainda. Adicione a sua primeira meta!</Text></View>
+          <View style={style.vazio1}><Text style={style.vazio2}>Sem metas ainda. Adicione sua primeira meta!</Text></View>
         ): (
           metas?.map((meta, key) => (
             <Surface key={key} style={style.card} elevation={0}>
@@ -105,7 +104,6 @@ export default function Index() {
         ))
       )}
       </ScrollView>
-    
     </View>
   );
 }
