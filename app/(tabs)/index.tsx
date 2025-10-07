@@ -1,4 +1,4 @@
-import {View, StyleSheet} from "react-native";
+import {View, StyleSheet, ScrollView} from "react-native";
 import {Link} from "expo-router";
 import { Redirect } from "expo-router";
 import { Metas } from "@/types/database_type";
@@ -73,35 +73,38 @@ export default function Index() {
                  Sair 
           </Button>
       </View>
-      
-      {metas?.length === 0 ? (
-        <View style={style.vazio1}><Text style={style.vazio2}>Sem metas ainda. Adicione sua primeira meta!</Text></View>
-      ): (
-        metas?.map((meta, key) => (
-          <Surface key={key} style={style.card} elevation={0}>
-            <View style={style.cardContent} >
-              <Text style={style.cardTitle}>{meta.title}</Text>
-              <Text style={style.cardDescricao}>{meta.descricao}</Text>
-              <View style={style.cardFooter}>
-                  <View style={style.streak}><MaterialCommunityIcons 
-                        name="fire" 
-                        size= {19} 
-                        color={"#ff9800"}/> 
-                        {meta.contagem_sequencia < 1 ? (
-                          <Text style={style.streaktext}>{meta.contagem_sequencia} dia de sequência</Text>
-                        ) : (
-                          <Text style={style.streaktext}>{meta.contagem_sequencia} dias de sequência</Text>
-                        )}
-                          
-                  </View>
-                  <View style={style.frequencia}>
-                        <Text style={style.frequenciatexto}>{meta.frequencia}</Text>
+
+
+      <ScrollView>
+        {metas?.length === 0 ? (
+          <View style={style.vazio1}><Text style={style.vazio2}>Sem metas ainda. Adicione a sua primeira meta!</Text></View>
+        ): (
+          metas?.map((meta, key) => (
+            <Surface key={key} style={style.card} elevation={0}>
+              <View style={style.cardContent} >
+                <Text style={style.cardTitle}>{meta.title}</Text>
+                <Text style={style.cardDescricao}>{meta.descricao}</Text>
+                <View style={style.cardFooter}>
+                    <View style={style.streak}><MaterialCommunityIcons 
+                          name="fire" 
+                          size= {19} 
+                          color={"#ff9800"}/> 
+                          {meta.contagem_sequencia < 1 ? (
+                            <Text style={style.streaktext}>{meta.contagem_sequencia} dia de sequência</Text>
+                          ) : (
+                            <Text style={style.streaktext}>{meta.contagem_sequencia} dias de sequência</Text>
+                          )}
+                            
                     </View>
+                    <View style={style.frequencia}>
+                          <Text style={style.frequenciatexto}>{meta.frequencia}</Text>
+                      </View>
+                </View>
               </View>
-            </View>
           </Surface>
         ))
       )}
+      </ScrollView>
     
     </View>
   );
