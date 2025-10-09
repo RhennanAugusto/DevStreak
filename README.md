@@ -1,4 +1,4 @@
-# 🚀 DevTracker — Metas & Hábitos (React Native + Expo + Appwrite)
+# 🚀 DevStreak — Metas & Hábitos (React Native + Expo + Appwrite)
 
 > **Trabalho da disciplina _Projeto de Software_ (graduação).**  
 > Aplicativo mobile para criar e acompanhar **metas/hábitos** com autenticação e dados em nuvem (Appwrite).  
