@@ -20,6 +20,7 @@ export const APPWRITE_PROJECT_ID = PROJECT;
 
 export const DATABASE_ID = process.env.EXPO_PUBLIC_DB_ID!;
 export const HABITS_TABLE =  process.env.EXPO_PUBLIC_TABLE_HABITS_ID!;
+export const COMPLETIONS_COLLECTION_ID = process.env.EXPO_PUBLIC_TABLE_HABITSCOMPLETIONS_ID!;
 
 export interface RealTimeResponse {
     events:  string[];

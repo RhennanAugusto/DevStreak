@@ -4,15 +4,18 @@ import { Redirect } from "expo-router";
 import { Metas } from "@/types/database_type";
 import { Button, Text, Surface } from "react-native-paper";
 import { useAuth } from "@/lib/auth-context";
-import { client,  databases, DATABASE_ID, HABITS_TABLE, RealTimeResponse } from "@/lib/appwrite";
-import { Query } from "react-native-appwrite";
-import { useEffect, useState } from "react";
+import { client,  databases, DATABASE_ID, HABITS_TABLE, RealTimeResponse, COMPLETIONS_COLLECTION_ID } from "@/lib/appwrite";
+import { ID, Query } from "react-native-appwrite";
+import { useEffect, useRef, useState } from "react";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import CardTitle from "react-native-paper/lib/typescript/components/Card/CardTitle";
+import { Swipeable } from "react-native-gesture-handler";
 
 export default function Index() {
   const {signOut, user} = useAuth();
   const [metas, setMetas] = useState <Metas[]>([]); // Usando Generics para não ter erro com o Documents
+
+  const swipeableRefs = useRef<{[key: string]: Swipeable | null}>({});
 
   useEffect(() => {
     //  Criação para fazer o Reload automatico ao criar uma meta
@@ -61,6 +64,66 @@ export default function Index() {
       console.error(error);
     }
   }
+
+  const renderLeftActions = () => (
+    <View style={style.left}>
+       <MaterialCommunityIcons
+          name= "trash-can-outline"
+          size={32}
+          color={"#ffff"}
+       />
+    </View>
+  );
+
+  const handleDeleteHabit = async (id: string) => {
+     try{
+        await databases.deleteDocument(DATABASE_ID, HABITS_TABLE, id)
+     } catch (error) {
+          console.error(error)
+     }
+  };
+
+  const handleCompleteHabit = async (id: string) => {
+    if (!user) return;
+     try{
+
+        const currentDate = new Date().toISOString()
+        await databases.createDocument(
+          DATABASE_ID, 
+          COMPLETIONS_COLLECTION_ID, 
+          ID.unique(),
+          {
+              habit_id: id,
+              user_id: user.$id,
+              completede_at: currentDate,
+
+          }
+        );
+
+        const habit = metas?.find((m) => m.$id === id);
+          if (!habit) return;
+
+          await databases.updateDocument(DATABASE_ID, HABITS_TABLE, id, {
+            contagem_sequencia: habit.contagem_sequencia + 1,
+            ultima_vez: currentDate,
+          }
+        );
+
+     } catch (error) {
+          console.error(error)
+     }
+  };
+
+
+  const renderRightActions = () => (
+    <View style={style.right}>
+       <MaterialCommunityIcons
+          name= "check-circle-outline"
+          size={32}
+          color={"#ffff"}
+       />
+    </View>
+  );
   
    
   return (
@@ -79,28 +142,46 @@ export default function Index() {
           <View style={style.vazio1}><Text style={style.vazio2}>Sem metas ainda. Adicione sua primeira meta!</Text></View>
         ): (
           metas?.map((meta, key) => (
-            <Surface key={key} style={style.card} elevation={0}>
-              <View style={style.cardContent} >
-                <Text style={style.cardTitle}>{meta.title}</Text>
-                <Text style={style.cardDescricao}>{meta.descricao}</Text>
-                <View style={style.cardFooter}>
-                    <View style={style.streak}><MaterialCommunityIcons 
-                          name="fire" 
-                          size= {19} 
-                          color={"#ff9800"}/> 
-                          {meta.contagem_sequencia < 1 ? (
-                            <Text style={style.streaktext}>{meta.contagem_sequencia} dia de sequência</Text>
-                          ) : (
-                            <Text style={style.streaktext}>{meta.contagem_sequencia} dias de sequência</Text>
-                          )}
-                            
-                    </View>
-                    <View style={style.frequencia}>
-                          <Text style={style.frequenciatexto}>{meta.frequencia}</Text>
+            <Swipeable ref= {(ref) => {
+              swipeableRefs.current[meta.$id] = ref
+              }}
+              key={key}
+              overshootLeft={false}
+              overshootRight={false}
+              renderLeftActions={renderLeftActions}
+              renderRightActions={renderRightActions}
+              onSwipeableOpen={(direction) => {
+                  if (direction === "left") {
+                    handleDeleteHabit(meta.$id);
+                  } else if (direction === "right") {
+                    handleCompleteHabit(meta.$id);
+                  }
+
+              }}  
+            >
+              <Surface key={key} style={style.card} elevation={0}>
+                <View style={style.cardContent} >
+                  <Text style={style.cardTitle}>{meta.title}</Text>
+                  <Text style={style.cardDescricao}>{meta.descricao}</Text>
+                  <View style={style.cardFooter}>
+                      <View style={style.streak}><MaterialCommunityIcons 
+                            name="fire" 
+                            size= {19} 
+                            color={"#ff9800"}/> 
+                            {meta.contagem_sequencia < 1 ? (
+                              <Text style={style.streaktext}>{meta.contagem_sequencia} dia de sequência</Text>
+                            ) : (
+                              <Text style={style.streaktext}>{meta.contagem_sequencia} dias de sequência</Text>
+                            )}
+                              
                       </View>
+                      <View style={style.frequencia}>
+                            <Text style={style.frequenciatexto}>{meta.frequencia}</Text>
+                        </View>
+                  </View>
                 </View>
-              </View>
-          </Surface>
+            </Surface>
+          </Swipeable>
         ))
       )}
       </ScrollView>
@@ -198,7 +279,31 @@ const style = StyleSheet.create({
 
   vazio2: {
     color: "#666666"
-  }
+  },
+
+  right: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    flex: 1,
+    backgroundColor: "#4caf50",
+    borderRadius: 18,
+    marginBottom:16,
+    marginTop:1,
+    paddingRight: 16
+  },
+   
+  left: {
+    justifyContent: "center",
+    alignItems: "flex-start",
+    flex: 1,
+    backgroundColor: "#e53935",
+    borderRadius: 18,
+    marginBottom:16,
+    marginTop:1,
+    paddingLeft: 16 // aqui que eu controlo a distancia do icone para a margem do seu lado
+  },
+
+
 
 })
 
