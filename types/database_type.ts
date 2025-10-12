@@ -9,3 +9,10 @@ export interface Metas extends Models.Document {
     ultima_vez: string;
     criado_em: string;
 }
+
+
+export interface HabitCompletion extends Models.Document {
+    habit_id :string,
+    user_id : string,
+    completede_at:string,
+}

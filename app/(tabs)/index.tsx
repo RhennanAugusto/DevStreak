@@ -1,7 +1,7 @@
 import {View, StyleSheet, ScrollView} from "react-native";
 import {Link} from "expo-router";
 import { Redirect } from "expo-router";
-import { Metas } from "@/types/database_type";
+import { Metas, HabitCompletion } from "@/types/database_type";
 import { Button, Text, Surface } from "react-native-paper";
 import { useAuth } from "@/lib/auth-context";
 import { client,  databases, DATABASE_ID, HABITS_TABLE, RealTimeResponse, COMPLETIONS_COLLECTION_ID } from "@/lib/appwrite";
@@ -11,18 +11,21 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import CardTitle from "react-native-paper/lib/typescript/components/Card/CardTitle";
 import { Swipeable } from "react-native-gesture-handler";
 
+
 export default function Index() {
   const {signOut, user} = useAuth();
   const [metas, setMetas] = useState <Metas[]>([]); // Usando Generics para não ter erro com o Documents
+  const [completadasMetas, setCompletadas] = useState<string[]>();
+
 
   const swipeableRefs = useRef<{[key: string]: Swipeable | null}>({});
 
   useEffect(() => {
     //  Criação para fazer o Reload automatico ao criar uma meta
     if (user) {
-      const channel  = `databases.${DATABASE_ID}.collections.${HABITS_TABLE}.documents`;
+      const habitsChannel  = `databases.${DATABASE_ID}.collections.${HABITS_TABLE}.documents`;
       const metasSubscription = client.subscribe(
-        channel,
+        habitsChannel,
         (response: RealTimeResponse) =>{
             if (
                 response.events.includes
@@ -43,10 +46,25 @@ export default function Index() {
           }
       );
 
+      const completionsChannel  = `databases.${DATABASE_ID}.collections.${COMPLETIONS_COLLECTION_ID}.documents`;
+      const completionsSubscription = client.subscribe(
+        completionsChannel,
+        (response: RealTimeResponse) =>{
+            if (
+                response.events.includes
+                ("databases.*.collections.*.documents.*.create")
+            ) {
+              fetchTodayCompletions();
+            }
+          }
+      );
+
       fetchHabits();
+      fetchTodayCompletions();
 
       return () => {
         metasSubscription();
+        completionsSubscription();
       };
     }
   
@@ -57,13 +75,35 @@ export default function Index() {
       const response = await databases.listDocuments<Metas>(
         DATABASE_ID,
         HABITS_TABLE,
-        [Query.equal("user_id", user?.$id ?? "")]
+        [Query.equal("user_id", user?.$id ?? "")] // filtro para trazer somente os documentos do usuário logado
       );
       setMetas(response.documents);
     } catch (error) {
       console.error(error);
     }
-  }
+  };
+
+  const fetchTodayCompletions = async() => {
+    try {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const response = await databases.listDocuments<HabitCompletion>(
+        DATABASE_ID,
+        COMPLETIONS_COLLECTION_ID,
+        [Query.equal("user_id", user?.$id ?? ""), 
+         Query.greaterThanEqual("completede_at", today.toISOString())] // vamos trazer também as metas que vão ser completadas hoje
+      );
+      const completadas = response.documents
+        setCompletadas(completadas.map((c) => c.habit_id));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const isHabitCompleted = (metaId: string) =>
+      completadasMetas?.includes(metaId)
+
 
   const renderLeftActions = () => (
     <View style={style.left}>
@@ -84,7 +124,7 @@ export default function Index() {
   };
 
   const handleCompleteHabit = async (id: string) => {
-    if (!user) return;
+    if (!user || completadasMetas?.includes(id)) return;
      try{
 
         const currentDate = new Date().toISOString()
@@ -115,14 +155,20 @@ export default function Index() {
   };
 
 
-  const renderRightActions = () => (
+  const renderRightActions = (metaId: string) => (
     <View style={style.right}>
-       <MaterialCommunityIcons
+      {isHabitCompleted(metaId) ? (
+        <Text style={{color:"#ffff"}}> Completado!</Text>
+      ) : (
+      
+      <MaterialCommunityIcons
           name= "check-circle-outline"
           size={32}
           color={"#ffff"}
        />
+     )}
     </View>
+    
   );
   
    
@@ -149,7 +195,7 @@ export default function Index() {
               overshootLeft={false}
               overshootRight={false}
               renderLeftActions={renderLeftActions}
-              renderRightActions={renderRightActions}
+              renderRightActions={() => renderRightActions(meta.$id)}
               onSwipeableOpen={(direction) => {
                   if (direction === "left") {
                     handleDeleteHabit(meta.$id);
@@ -157,9 +203,13 @@ export default function Index() {
                     handleCompleteHabit(meta.$id);
                   }
 
+                  swipeableRefs.current[meta.$id]?.close(); // essencial para um movimento fluido que coloquei na hora de completar
               }}  
             >
-              <Surface key={key} style={style.card} elevation={0}>
+              <Surface key={key} style={[
+                style.card, 
+                isHabitCompleted(meta.$id) && style.cardCompleted]}
+                elevation={0}>
                 <View style={style.cardContent} >
                   <Text style={style.cardTitle}>{meta.title}</Text>
                   <Text style={style.cardDescricao}>{meta.descricao}</Text>
@@ -216,6 +266,10 @@ const style = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
+  },
+
+  cardCompleted: {
+      opacity: 0.5,
   },
 
   cardContent: {
