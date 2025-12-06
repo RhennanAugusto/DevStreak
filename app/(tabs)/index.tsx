@@ -185,7 +185,11 @@ export default function Index() {
       
       <ScrollView showsVerticalScrollIndicator={false}>
         {metas?.length === 0 ? (
-          <View style={style.vazio1}><Text style={style.vazio2}>Sem metas ainda. Adicione sua primeira meta!</Text></View>
+          <View style={style.vazio1}>
+            <Text style={style.vazio2}>
+              Sem metas ainda. Adicione sua primeira meta!
+              </Text>
+              </View>
         ): (
           metas?.map((meta, key) => (
             <Swipeable ref= {(ref) => {
