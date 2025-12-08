@@ -1,10 +1,9 @@
-import { DATABASE_ID, databases, HABITS_TABLE } from "@/lib/appwrite";
+import { MetaController } from "@/controllers/MetaController";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View, StyleSheet} from "react-native";
-import { ID } from "react-native-appwrite";
-import { Button, SegmentedButtons, TextInput, useTheme, Text } from "react-native-paper";
+import { StyleSheet, View } from "react-native";
+import { Button, SegmentedButtons, Text, TextInput, useTheme } from "react-native-paper";
 
 const FREQUENCIAS = ["Diário", "Semanal", "Mensal"]
 
@@ -18,24 +17,17 @@ export default function MetasScreen() {
     const {user} = useAuth();
     const router = useRouter();
     const theme = useTheme();
+    const metaController = new MetaController();
 
     const handleSubmit = async ()  => {
         if (!user) return;
 
         try {
-        await databases.createDocument(
-            DATABASE_ID, 
-            HABITS_TABLE, 
-            ID.unique(),
-            {
+            await metaController.criarMeta({
                 user_id: user.$id,
                 title,
                 descricao,
                 frequencia,
-                contagem_sequencia: 0,
-                ultima_vez: new Date().toISOString(),
-                criado_em: new Date().toISOString(),
-
             });
 
             router.back();

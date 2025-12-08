@@ -1,15 +1,12 @@
-import {View, StyleSheet, ScrollView} from "react-native";
-import {Link} from "expo-router";
-import { Redirect } from "expo-router";
-import { Metas, HabitCompletion } from "@/types/database_type";
-import { Button, Text, Surface } from "react-native-paper";
+import { MetaController } from "@/controllers/MetaController";
+import { RealtimeController } from "@/controllers/RealtimeController";
 import { useAuth } from "@/lib/auth-context";
-import { client,  databases, DATABASE_ID, HABITS_TABLE, RealTimeResponse, COMPLETIONS_COLLECTION_ID } from "@/lib/appwrite";
-import { ID, Query } from "react-native-appwrite";
-import { useEffect, useRef, useState } from "react";
+import { Metas } from "@/types/database_type";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import CardTitle from "react-native-paper/lib/typescript/components/Card/CardTitle";
+import { useEffect, useRef, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
+import { Button, Surface, Text } from "react-native-paper";
 
 
 export default function Index() {
@@ -17,84 +14,50 @@ export default function Index() {
   const [metas, setMetas] = useState <Metas[]>([]); // Usando Generics para não ter erro com o Documents
   const [completadasMetas, setCompletadas] = useState<string[]>();
 
+  const metaController = new MetaController();
+  const realtimeController = new RealtimeController();
 
   const swipeableRefs = useRef<{[key: string]: Swipeable | null}>({});
 
   useEffect(() => {
     //  Criação para fazer o Reload automatico ao criar uma meta
     if (user) {
-      const habitsChannel  = `databases.${DATABASE_ID}.collections.${HABITS_TABLE}.documents`;
-      const metasSubscription = client.subscribe(
-        habitsChannel,
-        (response: RealTimeResponse) =>{
-            if (
-                response.events.includes
-                ("databases.*.collections.*.documents.*.create")
-            ) {
-              fetchHabits();
-            } else if (
-                response.events.includes
-                ("databases.*.collections.*.documents.*.update")
-            ) {
-              fetchHabits();
-            } else if (
-                response.events.includes
-                ("databases.*.collections.*.documents.*.delete")
-            ) {
-              fetchHabits();
-            }
-          }
+      const unsubscribeHabits = realtimeController.subscribeToHabits(
+        () => fetchHabits(),
+        () => fetchHabits(),
+        () => fetchHabits()
       );
 
-      const completionsChannel  = `databases.${DATABASE_ID}.collections.${COMPLETIONS_COLLECTION_ID}.documents`;
-      const completionsSubscription = client.subscribe(
-        completionsChannel,
-        (response: RealTimeResponse) =>{
-            if (
-                response.events.includes
-                ("databases.*.collections.*.documents.*.create")
-            ) {
-              fetchTodayCompletions();
-            }
-          }
+      const unsubscribeCompletions = realtimeController.subscribeToCompletions(
+        () => fetchTodayCompletions()
       );
 
       fetchHabits();
       fetchTodayCompletions();
 
       return () => {
-        metasSubscription();
-        completionsSubscription();
+        unsubscribeHabits();
+        unsubscribeCompletions();
       };
     }
   
   }, [user]);
 
   const fetchHabits = async() => {
+    if (!user) return;
     try {
-      const response = await databases.listDocuments<Metas>(
-        DATABASE_ID,
-        HABITS_TABLE,
-        [Query.equal("user_id", user?.$id ?? "")] // filtro para trazer somente os documentos do usuário logado
-      );
-      setMetas(response.documents);
+      const lista = await metaController.buscarMetasDoUsuario(user.$id);
+      setMetas(lista);
     } catch (error) {
       console.error(error);
     }
   };
 
   const fetchTodayCompletions = async() => {
+    if (!user) return;
     try {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      const response = await databases.listDocuments<HabitCompletion>(
-        DATABASE_ID,
-        COMPLETIONS_COLLECTION_ID,
-        [Query.equal("user_id", user?.$id ?? ""), 
-         Query.greaterThanEqual("completede_at", today.toISOString())] // vamos trazer também as metas que vão ser completadas hoje
-      );
-      const completadas = response.documents
-        setCompletadas(completadas.map((c) => c.habit_id));
+      const completadas = await metaController.buscarCompletacoesDeHoje(user.$id);
+      setCompletadas(completadas);
     } catch (error) {
       console.error(error);
     }
@@ -117,7 +80,7 @@ export default function Index() {
 
   const handleDeleteHabit = async (id: string) => {
      try{
-        await databases.deleteDocument(DATABASE_ID, HABITS_TABLE, id)
+        await metaController.deletarMeta(id)
      } catch (error) {
           console.error(error)
      }
@@ -126,29 +89,9 @@ export default function Index() {
   const handleCompleteHabit = async (id: string) => {
     if (!user || completadasMetas?.includes(id)) return;
      try{
-
-        const currentDate = new Date().toISOString()
-        await databases.createDocument(
-          DATABASE_ID, 
-          COMPLETIONS_COLLECTION_ID, 
-          ID.unique(),
-          {
-              habit_id: id,
-              user_id: user.$id,
-              completede_at: currentDate,
-
-          }
-        );
-
         const habit = metas?.find((m) => m.$id === id);
-          if (!habit) return;
-
-          await databases.updateDocument(DATABASE_ID, HABITS_TABLE, id, {
-            contagem_sequencia: habit.contagem_sequencia + 1,
-            ultima_vez: currentDate,
-          }
-        );
-
+        if (!habit) return;
+        await metaController.completarMeta(id, user.$id, habit);
      } catch (error) {
           console.error(error)
      }

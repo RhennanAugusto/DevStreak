@@ -1,12 +1,11 @@
-import { COMPLETIONS_COLLECTION_ID, DATABASE_ID, databases, HABITS_TABLE } from "@/lib/appwrite";
+import { MetaController } from "@/controllers/MetaController";
+import { MetaComStreak, SequenciaController } from "@/controllers/SequenciaController";
 import { useAuth } from "@/lib/auth-context";
 import { HabitCompletion, Metas } from "@/types/database_type";
-import { useEffect, useState } from "react";
-import { View} from "react-native";
-import { Query } from "react-native-appwrite";
-import { Card,Text } from "react-native-paper";
-import { StyleSheet } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
+import { Card, Text } from "react-native-paper";
 
 export default function SequenciaScreen() {
 
@@ -14,6 +13,9 @@ export default function SequenciaScreen() {
     // Armazena todas as metas criadas pelo usuário
     const [completadasMetas, setCompletadas] = useState<HabitCompletion[]>([]);
     const {user} = useAuth();
+
+    const metaController = new MetaController();
+    const sequenciaController = new SequenciaController();
 
       useEffect(() => {
         //  Criação para fazer o Reload automatico ao criar uma meta
@@ -29,89 +31,28 @@ export default function SequenciaScreen() {
 
 
       const fetchHabits = async() => {
+          if (!user) return;
           try {
-            const response = await databases.listDocuments<Metas>(
-              DATABASE_ID,
-              HABITS_TABLE,
-              [Query.equal("user_id", user?.$id ?? "")] // filtro para trazer somente os documentos do usuário logado
-            );
-            setMetas(response.documents);
+            const lista = await metaController.buscarMetasDoUsuario(user.$id);
+            setMetas(lista);
           } catch (error) {
             console.error(error);
           }
         };
       
         const fetchCompletions = async() => {
+          if (!user) return;
           try {
-            const response = await databases.listDocuments<HabitCompletion>(
-              DATABASE_ID,
-              COMPLETIONS_COLLECTION_ID,
-              [Query.equal("user_id", user?.$id ?? "")]
-            );
-            const completadas = response.documents
-              setCompletadas(completadas);
+            const completadas = await metaController.buscarTodasCompletacoes(user.$id);
+            setCompletadas(completadas);
           } catch (error) {
             console.error(error);
           }
         };
 
-        interface StreakData {
-            streak: number;
-            bestStreak: number;
-            total: number;
-        }
-
-
-
-        const getStreakData  = (metaId: string): StreakData  => {
-            const metasCompletadas = completadasMetas?.filter(
-                (c) => c.habit_id === metaId
-            ).sort((a,b)  => 
-                new Date(a.completede_at).getTime()- 
-                new Date(b.completede_at).getTime()
-            );
-
-            if (metasCompletadas?.length === 0) {
-                return { streak: 0,  bestStreak: 0, total: 0};
-            }
-            // criando o streak data
-            let streak = 0;
-            let bestStreak = 0;
-            let total = metasCompletadas.length;
-
-            let lastDate: Date | null = null;
-            let  currentStreak = 0;
-
-            metasCompletadas?.forEach((c) => {
-                const date = new Date(c.completede_at)
-                if (lastDate) {
-                    const diff = 
-                    (date.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-                    
-                    if (diff <= 1.5) {
-                        currentStreak += 1
-                    } else {
-                        currentStreak = 1
-                    }
-                } else {
-                    if (currentStreak > bestStreak) bestStreak = currentStreak;
-                    streak = currentStreak
-                    lastDate = date
-                }
-            });
-
-            return {streak,  bestStreak, total}
-        };   
-    
-        const metaSequencia = metas.map((metas) => {
-                const {streak, bestStreak, total} = getStreakData(metas.$id);
-                return {metas, bestStreak, streak, total};  // Criamos isso para ter acesso as nossas metas no objeto que anteriormente não era utilizado.
-                
-        })
-        .filter((item) => item.total > 0); // So entra no rank o que foi completado já
-        // Ordena o array `metaSequencia` em ordem crescente com base na propriedade `bestStreak`
-        // ou seja, os hábitos com menor sequência vêm primeiro.
-        const rankedHabits = metaSequencia.sort((a,b) => a.bestStreak - b.bestStreak)
+        const rankedHabits: MetaComStreak[] = useMemo(() => {
+            return sequenciaController.calcularMetasComStreak(metas, completadasMetas);
+        }, [metas, completadasMetas]);
         
 
     return (
